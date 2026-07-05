@@ -1,0 +1,14 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '== instructions/coding-rules.md =='; cat instructions/coding-rules.md; echo '== REQUEST.md =='; cat REQUEST.md; echo '---HOOK END---'"
+          }
+        ]
+      }
+    ]
+  }
+}

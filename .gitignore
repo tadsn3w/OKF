@@ -1,0 +1,14 @@
+# Personal and generated files — keep local, not in version control
+
+# Symlinks (recreated by mkproject)
+CLAUDE.md
+PI.md
+
+# Personal notes and session history
+notes/
+
+# Generated outputs (artifacts, not source)
+outputs/
+
+# Personal identity (different per team member)
+_config/user.md
