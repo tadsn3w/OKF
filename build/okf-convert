@@ -1,0 +1,55 @@
+#!/usr/bin/env -S uv run python3
+"""okf-convert — Convert any directory of markdown files into an OKF knowledge bundle."""
+
+import argparse
+import json
+import os
+import sys
+
+from okf_convert import build_bundle
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description='Convert a directory of markdown files into an OKF knowledge bundle.'
+    )
+    parser.add_argument(
+        'source', help='Source directory to scan for .md files'
+    )
+    parser.add_argument(
+        '--output', '-o', default='./knowledge',
+        help='Output directory for the bundle (default: ./knowledge)'
+    )
+    parser.add_argument(
+        '--dry-run', '-n', action='store_true',
+        help='Preview what would be created without writing files'
+    )
+    parser.add_argument(
+        '--stdout', '-c', action='store_true',
+        help='Print bundle summary as JSON to stdout instead of writing'
+    )
+
+    args = parser.parse_args()
+
+    if not os.path.isdir(args.source):
+        print(f'Error: source directory not found: {args.source}', file=sys.stderr)
+        sys.exit(1)
+
+    if args.stdout:
+        result = build_bundle(args.source, args.output, dry_run=True)
+        print(json.dumps(result, indent=2))
+    else:
+        result = build_bundle(args.source, args.output, dry_run=args.dry_run)
+        if not args.dry_run:
+            print(f'Bundle created at {args.output}')
+            print(f'  Concepts: {result["concepts"]}')
+            print(f'  Directories: {result["directories"]}')
+            print(f'  Source: {result["source"]}')
+        else:
+            print(f'[dry-run] Would create bundle at {args.output}')
+            print(f'  Concepts: {result["concepts"]}')
+            print(f'  Directories: {result["directories"]}')
+
+
+if __name__ == '__main__':
+    main()

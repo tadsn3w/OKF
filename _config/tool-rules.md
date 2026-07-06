@@ -36,3 +36,4 @@ Conventions and constraints for the tools available to the AI agent.  Add rules 
 - **`read` over `bash cat`** — prefer the `read` tool for file contents.  Use `bash` only for discovery (ls, grep, find) or when you need to process output.
 - **Prefer `computer_actions` for UI sequences** — when the intermediate state doesn't matter, batch actions.  Use individual tools only when you need to inspect the UI between steps.
 - **jj (Jujutsu) over git** — this project uses jj on top of git. Use `jj status` instead of `git status`, `jj log` instead of `git log`, and `jj describe` to edit commit messages. The repo is git underneath so `git` commands still work, but prefer `jj`.
+- **uv for Python** — use `uv run pytest` to run tests, `uv run python3` to execute scripts. Python scripts use shebang `#!/usr/bin/env -S uv run python3`. Avoid bare `pip` or `python3` commands.

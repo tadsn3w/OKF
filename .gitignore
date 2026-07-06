@@ -12,3 +12,6 @@ outputs/
 
 # Personal identity (different per team member)
 _config/user.md
+.venv/
+__pycache__/
+.pytest_cache/

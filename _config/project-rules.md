@@ -28,7 +28,7 @@ a visual project knowledge graph.
 ## Technology Stack
 
 - Python 3 for the conversion tool
-- pytest for tests
+- pytest for tests, uv for Python environment management
 - Markdown + YAML for all knowledge content
 - jj (Jujutsu) for version control, backed by git
 
@@ -36,7 +36,7 @@ a visual project knowledge graph.
 
 - macOS (Apple Silicon) — no cross-platform requirements yet
 - No cloud services — everything runs locally
-- No external dependencies beyond Python stdlib for the conversion tool
+- Conversion tool uses Python stdlib only; dev deps (pytest) managed by uv
 
 ## Conventions
 
@@ -44,4 +44,6 @@ a visual project knowledge graph.
 - `index.md` at every directory level for progressive disclosure
 - `log.md` as creation/update history
 - snake_case for Python, matching existing style
+- Run tests via uv: `uv run pytest build/tests/ -v`
+- Python scripts use shebang `#!/usr/bin/env -S uv run python3` for direct execution
 - Use `jj` for all version control: `jj describe`, `jj new`, `jj commit`, `jj undo`
