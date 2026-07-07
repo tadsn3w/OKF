@@ -6,13 +6,26 @@ import os
 import re
 from datetime import datetime, timezone
 
-RESERVED = {'index.md', 'log.md', 'types.md'}
+RESERVED = {'index.md', 'log.md'}
+DEFAULT_EXCLUDES = {'.git', '.venv', '.pytest_cache', '__pycache__'}
 
 
-def scan_directory(root: str) -> list[str]:
+def is_inside(path: str, parent: str) -> bool:
+    """Return True when path is parent or a descendant of parent."""
+    return os.path.commonpath([os.path.abspath(path), os.path.abspath(parent)]) == os.path.abspath(parent)
+
+
+def scan_directory(root: str, output: str | None = None) -> list[str]:
     """Return sorted relative paths of all .md files under root."""
+    root = os.path.abspath(root)
+    output = os.path.abspath(output) if output else None
     md_files = []
-    for dirpath, _, filenames in os.walk(root):
+    for dirpath, dirnames, filenames in os.walk(root):
+        dirnames[:] = sorted(
+            d for d in dirnames
+            if d not in DEFAULT_EXCLUDES
+            and not (output and is_inside(os.path.join(dirpath, d), output))
+        )
         for f in sorted(filenames):
             if f.endswith('.md'):
                 rel = os.path.relpath(os.path.join(dirpath, f), root)
@@ -88,13 +101,17 @@ def process_file(content: str, filename: str) -> str:
     return fm + '\n\n' + content.lstrip()
 
 
-def get_concept_info(content: str, filename: str) -> tuple[str, str]:
-    """Extract (title, description) from a concept file."""
+def get_concept_info(content: str, filename: str) -> tuple[str, str, str]:
+    """Extract (type, title, description) from a concept file."""
     fm_text, fm_body, _ = split_frontmatter(content)
+    concept_type = 'Document'
     title = filename_to_title(filename)
     description = ''
 
     if fm_body:
+        ct = extract_frontmatter_value(fm_body, 'type')
+        if ct:
+            concept_type = ct
         t = extract_frontmatter_value(fm_body, 'title')
         if t:
             title = t
@@ -102,13 +119,14 @@ def get_concept_info(content: str, filename: str) -> tuple[str, str]:
         if d:
             description = d
 
-    return title, description
+    return concept_type, title, description
 
 
-def write_file(path: str, content: str, dry_run: bool):
+def write_file(path: str, content: str, dry_run: bool, quiet: bool = False):
     """Write file if not dry_run; print preview if dry_run."""
     if dry_run:
-        print(f'[dry-run] would write {path} ({len(content)} bytes)')
+        if not quiet:
+            print(f'[dry-run] would write {path} ({len(content)} bytes)')
     else:
         os.makedirs(os.path.dirname(path) or '.', exist_ok=True)
         with open(path, 'w') as f:
@@ -116,7 +134,7 @@ def write_file(path: str, content: str, dry_run: bool):
 
 
 def build_index(dirname: str, entries: list[tuple[str, str, str]],
-                output: str, dry_run: bool):
+                output: str, dry_run: bool, quiet: bool = False):
     """
     Write index.md for a directory.
     entries: list of (concept_filename, title, description)
@@ -131,10 +149,33 @@ def build_index(dirname: str, entries: list[tuple[str, str, str]],
     lines.append('')
 
     out_path = os.path.join(output, dirname, 'index.md') if dirname != '.' else os.path.join(output, 'index.md')
-    write_file(out_path, '\n'.join(lines), dry_run)
+    write_file(out_path, '\n'.join(lines), dry_run, quiet)
 
 
-def build_log(output: str, source: str, concepts: int, dry_run: bool):
+def build_types(output: str, type_entries: dict[str, list[tuple[str, str]]],
+                dry_run: bool, quiet: bool = False):
+    """Write types.md at bundle root."""
+    today = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
+    lines = [
+        '---',
+        'type: Concept Directory',
+        'title: Types in this bundle',
+        'description: Informational inventory of frontmatter type values found in this OKF bundle.',
+        'tags: [okf, metadata]',
+        f'timestamp: {today}',
+        '---',
+        '',
+        '| Type | Count | Concepts |',
+        '|------|-------|----------|',
+    ]
+    for concept_type, entries in sorted(type_entries.items()):
+        links = ', '.join(f'[{title}]({path})' for path, title in sorted(entries))
+        lines.append(f'| {concept_type} | {len(entries)} | {links} |')
+    lines.append('')
+    write_file(os.path.join(output, 'types.md'), '\n'.join(lines), dry_run, quiet)
+
+
+def build_log(output: str, source: str, concepts: int, dry_run: bool, quiet: bool = False):
     """Write log.md at bundle root."""
     today = datetime.now(timezone.utc).strftime('%Y-%m-%d')
     content = f"""# Bundle Update Log
@@ -142,10 +183,11 @@ def build_log(output: str, source: str, concepts: int, dry_run: bool):
 ## {today}
 * **Creation**: Bundle created from `{source}` — {concepts} concepts.
 """
-    write_file(os.path.join(output, 'log.md'), content, dry_run)
+    write_file(os.path.join(output, 'log.md'), content, dry_run, quiet)
 
 
-def build_bundle(source: str, output: str, dry_run: bool = False) -> dict:
+def build_bundle(source: str, output: str, dry_run: bool = False,
+                 quiet: bool = False) -> dict:
     """
     Convert a directory of markdown files into an OKF knowledge bundle.
 
@@ -153,9 +195,10 @@ def build_bundle(source: str, output: str, dry_run: bool = False) -> dict:
     """
     source = os.path.abspath(source)
     output = os.path.abspath(output)
-    md_files = scan_directory(source)
+    md_files = scan_directory(source, output)
 
     dir_entries: dict[str, list[tuple[str, str, str]]] = {}
+    type_entries: dict[str, list[tuple[str, str]]] = {}
 
     for rel_path in md_files:
         abs_path = os.path.join(source, rel_path)
@@ -164,26 +207,25 @@ def build_bundle(source: str, output: str, dry_run: bool = False) -> dict:
 
         processed = process_file(content, rel_path)
         filename = os.path.basename(rel_path)
-
-        # Handle reserved filenames in source
-        if filename in RESERVED:
-            filename = f'_{filename}'
         dirname = os.path.dirname(rel_path)
+
+        if filename in RESERVED or (filename == 'types.md' and dirname == ''):
+            filename = f'_{filename}'
         out_rel = os.path.join(dirname, filename) if dirname else filename
 
         out_abs = os.path.join(output, out_rel)
-        write_file(out_abs, processed, dry_run)
+        write_file(out_abs, processed, dry_run, quiet)
 
-        title, desc = get_concept_info(processed, filename)
+        concept_type, title, desc = get_concept_info(processed, filename)
         group = dirname if dirname else '.'
         dir_entries.setdefault(group, []).append((filename, title, desc))
+        type_entries.setdefault(concept_type, []).append((out_rel, title))
 
-    # Write index.md for each directory that has concepts
     for dirname, entries in sorted(dir_entries.items()):
-        build_index(dirname, entries, output, dry_run)
+        build_index(dirname, entries, output, dry_run, quiet)
 
-    # Write log.md
-    build_log(output, source, len(md_files), dry_run)
+    build_types(output, type_entries, dry_run, quiet)
+    build_log(output, source, len(md_files), dry_run, quiet)
 
     return {
         'concepts': len(md_files),

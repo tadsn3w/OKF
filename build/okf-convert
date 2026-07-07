@@ -36,7 +36,7 @@ def main():
         sys.exit(1)
 
     if args.stdout:
-        result = build_bundle(args.source, args.output, dry_run=True)
+        result = build_bundle(args.source, args.output, dry_run=True, quiet=True)
         print(json.dumps(result, indent=2))
     else:
         result = build_bundle(args.source, args.output, dry_run=args.dry_run)
