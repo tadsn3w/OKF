@@ -46,6 +46,7 @@ a visual project knowledge graph.
 - snake_case for Python, matching existing style
 - Run tests via uv: `uv run pytest build/tests/ -v`
 - Python scripts use shebang `#!/usr/bin/env -S uv run python3` for direct execution
-- Commit messages follow [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/):
+- Commit messages follow [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/)
+  (local copy: `standards/conventional-commits.md`):
   `feat:`, `fix:`, `docs:`, `chore:`, `test:`, `refactor:`, `build:`, `ci:`
 - Use `jj` for all version control: `jj describe`, `jj new`, `jj git push`
