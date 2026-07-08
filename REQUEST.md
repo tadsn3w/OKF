@@ -1,5 +1,7 @@
 # Phase 1 — OKF: dogfood + conversion tool
 
+<!-- Next session: read notes/ideas.md and run grill-with-docs -->
+
 This is Phase 1 of a larger graph-system project. Two deliverables:
 
 1. **Dogfood bundle** — convert this project's own scaffold files into an OKF

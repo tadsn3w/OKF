@@ -119,6 +119,20 @@ When instructions conflict, follow this order:
 7. Files in `instructions/` (except coding-rules.md)
 8. General defaults or older advice
 
+## Agent skills
+
+### Issue tracker
+
+Issues are tracked as GitHub issues using the `gh` CLI. External PRs are not treated as a triage surface. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+The default label vocabulary is used — `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Multi-context layout — root `CONTEXT.md` maps workspace-level `CONTEXT.md` files. See `docs/agents/domain.md`.
+
 ## Template Maintainers Only
 
 If `_infrastructure.md` exists in this directory, you are working on the mkproject
