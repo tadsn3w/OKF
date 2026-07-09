@@ -1,6 +1,10 @@
 # Phase 1 — OKF: dogfood + conversion tool
 
 <!-- Next session: read notes/ideas.md and run grill-with-docs -->
+<!-- grill-with-docs in progress — resume at Question 6: what does the AI
+     agent "run" against a codebase? (1) execute real code in sandbox,
+     (2) simulate process from docs, (3) modify the project. Lattice runs
+     the AI agent itself (decided Q4). Lattice is the harness. -->
 
 This is Phase 1 of a larger graph-system project. Two deliverables:
 
